@@ -53,7 +53,7 @@ contract Tributary is Ownable {
 
     /// EVENTS ///
 
-    event Tributary__Distribute(uint256 beraBalance);
+    event Tributary__Distribute(uint256 amount, address owner, address miberaSplitter);
     event Tributary__RescueERC20(address token_, uint256 amount_);
 
     /// ERRORS ///
@@ -78,9 +78,11 @@ contract Tributary is Ownable {
     function distribute() external {
         uint256 beraBalance = address(this).balance;
         IWBERA(wbera).deposit{value: beraBalance}();
-        IERC20(wbera).safeTransfer(owner(), beraBalance / 2);
-        IERC20(wbera).safeTransfer(TributaryLaunchpad(tributaryLaunchpad).miberaSplitter(), beraBalance / 2);
-        emit Tributary__Distribute(beraBalance);
+        uint256 amount = beraBalance / 2;
+        address miberaSplitter = TributaryLaunchpad(tributaryLaunchpad).miberaSplitter();
+        IERC20(wbera).safeTransfer(owner(), amount);
+        IERC20(wbera).safeTransfer(miberaSplitter, amount);
+        emit Tributary__Distribute(amount, owner(), miberaSplitter);
     }
 
     /// RESTRICTED FUNCTIONS ///
@@ -250,7 +252,7 @@ contract TributaryLaunchpad is Ownable {
         Tributary(payable(tributary_)).transferOwnership(msg.sender);
         ISplitter(splitter_).transferOwnership(tributary_);
         ITreasury(treasury_).transferOwnership(tributary_);
-        
+
         emit TributaryLaunchpad__CreateDerivativeCollection(collection_, treasury_, splitter_, tributary_);
     }
 
